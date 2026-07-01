@@ -67,16 +67,19 @@ class OpenAICompatibleEmbedder(BaseEmbedder):
 
 
 def cosine(a: List[float], b: List[float]) -> float:
+    """真正的余弦相似度：点积 / (|a|·|b|)。
+
+    不依赖向量是否已归一化 —— DashScope text-embedding-v3 等后端
+    不保证返回单位向量，若只算点积会让 score_threshold 失去意义。
+    """
     if len(a) != len(b):
         return 0.0
-    return sum(x * y for x, y in zip(a, b))
-
-
-def _l2_normalize(v: List[float]) -> List[float]:
-    n = math.sqrt(sum(x * x for x in v))
-    if n == 0:
-        return v
-    return [x / n for x in v]
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(x * x for x in b))
+    if na == 0.0 or nb == 0.0:
+        return 0.0
+    return dot / (na * nb)
 
 
 class SkillRetriever:
